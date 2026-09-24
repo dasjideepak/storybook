@@ -466,12 +466,50 @@ export function findDevServerKillCommands(commands: string[], navigatedUrls: str
   return commands.filter((command) => KILL_COMMAND_PATTERN.test(command) && target.test(command));
 }
 
-// URLs the in-app browser navigated to, from the codex raw transcript: each
-// successful node_repl `js` tool call is scanned for `goto('<url>')` string
-// literals in its code argument. This mirrors how plugin workflow calls are
-// parsed out of `storybook tools` shell commands. A dynamically composed URL
-// (`goto(baseUrl + path)`) escapes the literal match and fails the assertion
-// loud rather than as a false-pass.
+const REVIEW_PAGE_URL_PATTERN = /[?&]path=\/review\/?/;
+
+// A navigate or preview_start call on any MCP browser server (Claude), or a
+// Codex in-app-browser `goto`, to the review page on the local dev server.
+// Not tied to the link in the final response, so `localhost` versus
+// `127.0.0.1` or a slash difference cannot fail the cell.
+export function expectReviewOpenedInBrowser(): void {
+  const navigations = getInAppBrowserNavigations();
+
+  expect(
+    navigations.length,
+    'Expected the agent to open a URL in the in-app browser (a navigate / preview_start call, or a Codex goto), but the transcript holds no browser navigation at all'
+  ).toBeGreaterThan(0);
+  expect(
+    navigations.some((url) => isLocalDevServerUrl(url) && REVIEW_PAGE_URL_PATTERN.test(url)),
+    `Expected an in-app browser navigation to the review page on the local dev server. Navigated to:\n${navigations.join('\n')}`
+  ).toBe(true);
+}
+
+function getInAppBrowserNavigations(): string[] {
+  if (getEvalContext().agent === 'codex') {
+    return parseCodexBrowserNavigations(readFileSync(TRANSCRIPT_PATH, 'utf8'));
+  }
+
+  return getTranscript().events.flatMap((event) => {
+    const name = event.tool?.originalName;
+    if (
+      event.type !== 'tool_call' ||
+      typeof name !== 'string' ||
+      !/^mcp__.+__(?:navigate|preview_start)$/.test(name)
+    ) {
+      return [];
+    }
+    const url = isRecord(event.tool?.args) ? event.tool.args.url : undefined;
+    return typeof url === 'string' ? [url] : [];
+  });
+}
+
+// URLs the Codex in-app browser navigated to, from the codex raw transcript:
+// each successful node_repl `js` tool call is scanned for `goto('<url>')`
+// string literals in its code argument. This mirrors how plugin workflow calls
+// are parsed out of `storybook tools` shell commands. A dynamically composed URL
+// (`goto(baseUrl + path)`) escapes the literal match, so it counts as no
+// navigation rather than a wrong one.
 export function parseCodexBrowserNavigations(rawTranscript: string): string[] {
   return rawTranscript.split('\n').flatMap((line) => {
     const event = parseJson(line);
@@ -1146,7 +1184,7 @@ function expectFinalResponseSharesReviewLink(): void {
   }
 
   expect(finalMessage, 'Final response must include the Storybook review page link').toMatch(
-    /[?&]path=\/review\/?/
+    REVIEW_PAGE_URL_PATTERN
   );
   expect(
     finalMessage,
