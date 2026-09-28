@@ -408,7 +408,7 @@ export function expectPreviewBrowserStarted(): void {
       (event) =>
         event.type === 'tool_call' &&
         typeof event.tool?.originalName === 'string' &&
-        event.tool.originalName.endsWith('__preview_start')
+        event.tool.originalName === 'mcp__preview-browser__preview_start'
     );
     expect(
       started,

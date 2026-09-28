@@ -14,6 +14,15 @@ import { reviewToolset } from './definition.ts';
 
 const reviewUrl = 'http://localhost:6006/?path=/review/';
 
+const HARNESS_BROWSER_TOOLS = [
+  'preview_eval',
+  'preview_start',
+  'Claude_Browser',
+  'preview_open',
+  'browser_navigate',
+  'node_repl',
+];
+
 const input = {
   title: 'Button tweaks',
   description: 'Check primary',
@@ -213,14 +222,7 @@ Two things you must do now, both of them:
     it('names no harness-specific browser tool', async () => {
       const outcome = await createReview({}, mcpCtx);
 
-      for (const harnessTool of [
-        'preview_eval',
-        'preview_start',
-        'Claude_Browser',
-        'preview_open',
-        'browser_navigate',
-        'node_repl',
-      ]) {
+      for (const harnessTool of HARNESS_BROWSER_TOOLS) {
         expect(outcome.markdown).not.toContain(harnessTool);
       }
     });
@@ -245,6 +247,27 @@ Two things you must do now, both of them:
 
       expect(description).toContain('Start from `npx storybook tools stories changed`');
       expect(description).toContain('fall back to `npx storybook tools stories find-by-component`');
+    });
+
+    // Claude Code truncates MCP tool descriptions after 2048 characters.
+    it('fits within the MCP description limit of Claude Code', () => {
+      const description = resolveToolsetDescription(
+        reviewToolset.methods.create.description,
+        mcpCtx
+      );
+
+      expect(description.length).toBeLessThanOrEqual(2048);
+    });
+
+    it('names no harness-specific browser tool', () => {
+      const description = resolveToolsetDescription(
+        reviewToolset.methods.create.description,
+        mcpCtx
+      );
+
+      for (const harnessTool of HARNESS_BROWSER_TOOLS) {
+        expect(description).not.toContain(harnessTool);
+      }
     });
   });
 });
