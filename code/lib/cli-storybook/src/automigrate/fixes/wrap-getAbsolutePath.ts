@@ -1,4 +1,5 @@
 import {
+  ensureNamedImport,
   getAbsolutePathWrapperAsCallExpression,
   getAbsolutePathWrapperName,
   getFieldsForGetAbsolutePathWrapper,
@@ -68,12 +69,13 @@ export const wrapGetAbsolutePath: Fix<WrapGetAbsolutePathRunOptions> = {
           mainConfig._code.includes('module.exports')
         ) {
           throw new CommonJsConfigNotSupportedError();
-        } else {
-          mainConfig.setImport(['dirname'], 'node:path');
-          mainConfig.setImport(['fileURLToPath'], 'node:url');
         }
+        const names = {
+          dirname: ensureNamedImport(mainConfig, 'dirname', 'node:path'),
+          fileURLToPath: ensureNamedImport(mainConfig, 'fileURLToPath', 'node:url'),
+        };
         mainConfig.setBodyDeclaration(
-          getAbsolutePathWrapperAsCallExpression(result.isConfigTypescript)
+          getAbsolutePathWrapperAsCallExpression(result.isConfigTypescript, names)
         );
       }
     });

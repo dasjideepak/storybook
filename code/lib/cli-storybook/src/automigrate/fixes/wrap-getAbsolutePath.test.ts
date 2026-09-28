@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { babelParse } from 'storybook/internal/babel';
+
 import type { CheckOptions, RunOptions } from '../types.ts';
 import { type WrapGetAbsolutePathRunOptions, wrapGetAbsolutePath } from './wrap-getAbsolutePath.ts';
 
@@ -88,6 +90,38 @@ describe('wrapGetAbsolutePath', () => {
 
         function getAbsolutePath(value) {
           return dirname(fileURLToPath(import.meta.resolve(\`\${value}/package.json\`)));
+        }
+        "
+      `);
+    });
+
+    it('renames its dirname import when the main config already declares dirname', async () => {
+      await wrapGetAbsolutePath.run?.({
+        mainConfigPath: require.resolve('./__test__/main-config-with-own-dirname.js'),
+        result: { isConfigTypescript: false },
+      } as RunOptions<WrapGetAbsolutePathRunOptions>);
+
+      const writeFile = vi.mocked((await import('node:fs/promises')).writeFile);
+      const output = String(writeFile.mock.calls.at(-1)?.[1]);
+
+      expect(() => babelParse(output)).not.toThrow();
+      expect(output).toMatchInlineSnapshot(`
+        "import { dirname as pathDirname } from 'node:path';
+        import path from 'node:path';
+        import { fileURLToPath } from 'node:url';
+
+        const dirname = path.dirname(fileURLToPath(import.meta.url));
+
+        const config = {
+          stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+          addons: [getAbsolutePath('@storybook/addon-vitest')],
+          framework: getAbsolutePath('@storybook/react-vite'),
+          viteFinal: (viteConfig) => ({ ...viteConfig, root: path.resolve(dirname, '..') }),
+        };
+        export default config;
+
+        function getAbsolutePath(value) {
+          return pathDirname(fileURLToPath(import.meta.resolve(\`\${value}/package.json\`)));
         }
         "
       `);
