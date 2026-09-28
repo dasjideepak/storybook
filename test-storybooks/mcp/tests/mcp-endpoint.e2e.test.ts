@@ -501,31 +501,31 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "title": "Get stories for component files",
 				  },
 				  {
-				    "description": "Publish a curated review to Storybook's review page for spot-checking **visual impact**. Each call replaces the single active review — call it again whenever the user iterates on the changes.
+				    "description": "Publish a curated review to Storybook's review page so the user can spot-check **visual impact**. Each call replaces the active review; call again whenever the user iterates.
+
+				## After it succeeds
+				Open \`reviewUrl\` in your in-app browser before your final response: find a tool or skill (including ones you still have to load) that opens a URL in a browser pane or preview tab, and call it. Skip only when you have none. Then end your final response with the link.
 
 				## When to call
-				- **Trigger 1 — visual change** (components, stories, CSS, themes, colors, design tokens, i18n — anything that changes how the UI looks): when the user should spot-check rendering. A shared file (token, style, util) has no stories of its own — review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from \`stories-changed\`; fall back to \`stories-find-by-component\` if change detection is unavailable. Include \`changedFiles\`.
-				- **Trigger 2 — browse request** ("show me the Badge component"): resolve via \`stories-find-by-component\` / \`docs-list\`; you may consult other sources to interpret the ask, but IDs must still come from those tools. Pass \`changedFiles: []\` — no code changed.
+				- **Visual change** (components, stories, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers'. Skip non-visual refactors unless side-effects are plausible. Start from \`stories-changed\`; fall back to \`stories-find-by-component\`. Include \`changedFiles\`.
+				- **Browse request** ("show me the Badge component"): resolve via \`stories-find-by-component\` / \`docs-list\`. Show exactly what was asked, no more, no less. Pass \`changedFiles: []\`.
 
 				## Hard rules
-				1. Every \`storyId\` MUST come from those tools. Reject IDs derived from file paths, story names, or memory. Unknown IDs cause a runtime error; obtain real IDs via \`stories-find-by-component\` or \`docs-list\`, then retry.
-				2. Every story you CREATED in this change MUST appear in the review — including interaction/play-function stories. Showing the stories you modified is encouraged too. Curate by grouping, never by omission.
+				1. Every \`storyId\` MUST come from those tools, never from file paths, story names or memory.
+				2. Every story you CREATED MUST appear, including play-function stories. Curate by grouping, never by omission.
 				3. Prefer 2-5 collections; avoid one-story collections unless truly isolated.
-				4. Follow-up reviews: stabilize collection/story order to avoid disorientation from reshuffling.
-				5. Apply the field formatting rules from each schema property. Do not use em-dashes in review payload field values (title, rationale, description, etc.).
-				6. Do not instruct or tell the user what to do unless they explicitly ask for guidance.
-				7. "Collection" and "trigger" are internal terms for this tool's mechanics and mean nothing to users. Never use them in user-facing text unless the user used them first; say "group of stories" or just describe the contents in plain language.
+				4. In follow-up reviews, keep collection and story order stable.
+				5. Follow each schema property's formatting rules. No em-dashes in payload fields.
+				6. Don't tell the user what to do unless they ask for guidance.
+				7. "Collection" is an internal term. Never use it in user-facing text unless the user did; say "group of stories" or describe the contents.
 
-				## Curating (Trigger 1)
-				Trace the **visual cascade** up the **import graph** to **page-level UI surfaces** — one collection per layer (\`distance 0\` → direct importers → page context). Include **control stories** where the change is **not supposed to be visible**. **Theme tokens**, **shared styles**, and **layout primitives** need page-level coverage even from a single-file edit. **Localized changes:** affected component → **usage locations** → outer surfaces. **Larger features:** central page/module → lower-level pieces → outer **usage locations**.
-
-				## Curating (Trigger 2)
-				Exactly what the user asked for — **no more, no less**. Group logically or follow **story index hierarchy**.",
+				## Curating a visual change
+				Trace the visual cascade up the import graph to page-level surfaces, one collection per layer (changed component → direct importers → page context). Include control stories where the change should not be visible. Theme tokens, shared styles and layout primitives need page-level coverage even for a one-file edit.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
 				        "changedFiles": {
-				          "description": "Paths of the files you changed, most central first. Pass an empty array \`[]\` only when no code changed (browse requests, Trigger 2).",
+				          "description": "Paths of the files you changed, most central first. Pass an empty array \`[]\` only when no code changed (browse requests).",
 				          "items": {
 				            "type": "string",
 				          },
