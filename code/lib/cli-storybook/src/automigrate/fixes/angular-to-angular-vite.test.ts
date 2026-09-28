@@ -1196,11 +1196,13 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
       // runner configures it after the batched install completes.
       expect(mockAdd).toHaveBeenCalledWith(
         '@storybook/addon-vitest',
-        expect.objectContaining({ skipInstall: true, skipPostinstall: true })
+        expect.objectContaining({ skipInstall: true, skipPostinstall: true }),
+        expect.objectContaining({ log: logger.debug })
       );
       expect(mockAdd).toHaveBeenCalledWith(
         '@storybook/addon-a11y',
-        expect.objectContaining({ skipInstall: true, skipPostinstall: true })
+        expect.objectContaining({ skipInstall: true, skipPostinstall: true }),
+        expect.objectContaining({ log: logger.debug })
       );
       // Both accepted addons are queued for post-install configuration.
       expect(addonsToPostinstall).toEqual(['@storybook/addon-vitest', '@storybook/addon-a11y']);

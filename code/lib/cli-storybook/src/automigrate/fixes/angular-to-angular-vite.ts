@@ -21,6 +21,7 @@ import { dedent } from 'ts-dedent';
 
 import { add } from '../../add.ts';
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
+import { automigrationLogger } from '../helpers/automigration-logger.ts';
 import type { Fix } from '../types.ts';
 import {
   findWorkspaceFiles,
@@ -768,13 +769,17 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
           // installed in a single batch at the end of automigrate, so the addon isn't on disk
           // yet and its postinstall hook can't be resolved here. The runner configures it after
           // install (see `addonsToPostinstall`), mirroring CLI init's install-then-configure order.
-          await add('@storybook/addon-vitest', {
-            packageManager: packageManager.type,
-            configDir,
-            skipInstall: true,
-            skipPostinstall: true,
-            yes: !!yes,
-          });
+          await add(
+            '@storybook/addon-vitest',
+            {
+              packageManager: packageManager.type,
+              configDir,
+              skipInstall: true,
+              skipPostinstall: true,
+              yes: !!yes,
+            },
+            automigrationLogger
+          );
           addonsToPostinstall?.push('@storybook/addon-vitest');
         } catch (err) {
           logger.warn(`Could not set up @storybook/addon-vitest automatically: ${err}`);
@@ -792,13 +797,17 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       if (wantsA11y) {
         try {
           // Deferred postinstall, same as addon-vitest above.
-          await add('@storybook/addon-a11y', {
-            packageManager: packageManager.type,
-            configDir,
-            skipInstall: true,
-            skipPostinstall: true,
-            yes: !!yes,
-          });
+          await add(
+            '@storybook/addon-a11y',
+            {
+              packageManager: packageManager.type,
+              configDir,
+              skipInstall: true,
+              skipPostinstall: true,
+              yes: !!yes,
+            },
+            automigrationLogger
+          );
           addonsToPostinstall?.push('@storybook/addon-a11y');
         } catch (err) {
           logger.warn(`Could not set up @storybook/addon-a11y automatically: ${err}`);

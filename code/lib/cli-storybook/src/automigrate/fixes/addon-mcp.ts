@@ -6,6 +6,7 @@ import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import { add } from '../../add.ts';
+import { automigrationLogger } from '../helpers/automigration-logger.ts';
 import type { Fix } from '../types.ts';
 
 const ADDON_MCP = '@storybook/addon-mcp';
@@ -51,19 +52,23 @@ export const addonMcp: Fix<AddonMcpOptions> = {
       return;
     }
 
-    logger.log(
+    logger.debug(
       `${result.isInstalled ? 'Updating' : 'Installing'} ${picocolors.magenta(ADDON_MCP)} to the latest version...`
     );
     // `add` pins core packages (including @storybook/addon-mcp) to the matching Storybook
     // version from the versions map and, when the addon is already present, refreshes the
     // dependency without duplicating it in the main config.
     // skipInstall: the upgrade command runs a single dependency install after all automigrations.
-    await add(ADDON_MCP, {
-      configDir,
-      packageManager: packageManager.type,
-      skipInstall: true,
-      skipPostinstall: true,
-      yes: true,
-    });
+    await add(
+      ADDON_MCP,
+      {
+        configDir,
+        packageManager: packageManager.type,
+        skipInstall: true,
+        skipPostinstall: true,
+        yes: true,
+      },
+      automigrationLogger
+    );
   },
 };

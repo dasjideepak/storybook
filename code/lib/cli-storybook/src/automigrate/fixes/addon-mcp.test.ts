@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 import { detectAgent } from 'storybook/internal/telemetry';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
@@ -97,7 +98,11 @@ describe('addon-mcp', () => {
         configDir: '.storybook',
       } as RunOptions<AddonMcpOptions>);
 
-      expect(vi.mocked(add)).toHaveBeenCalledWith('@storybook/addon-mcp', addArgs);
+      expect(vi.mocked(add)).toHaveBeenCalledWith(
+        '@storybook/addon-mcp',
+        addArgs,
+        expect.objectContaining({ log: logger.debug })
+      );
     });
 
     it('force-updates @storybook/addon-mcp to latest when it is already installed', async () => {
@@ -107,7 +112,11 @@ describe('addon-mcp', () => {
         configDir: '.storybook',
       } as RunOptions<AddonMcpOptions>);
 
-      expect(vi.mocked(add)).toHaveBeenCalledWith('@storybook/addon-mcp', addArgs);
+      expect(vi.mocked(add)).toHaveBeenCalledWith(
+        '@storybook/addon-mcp',
+        addArgs,
+        expect.objectContaining({ log: logger.debug })
+      );
     });
 
     it('does nothing in dry run mode', async () => {
