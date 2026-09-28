@@ -13,6 +13,7 @@ import type {
   ManifestParameter,
 } from '../manifest/types.ts';
 import { readTypeText } from './alt-type.ts';
+import { ARG_TYPE_CATEGORIES, type ArgTypeCategory } from './categories.ts';
 import { parseTypeText } from './parse-type-text.ts';
 
 /** `type.text` is the analyzer's non-spec spelling of `syntax`. */
@@ -44,10 +45,14 @@ export function mapArgTypes(
       ...(declaration.events ?? []).flatMap((event) => eventEntries(event, typeProperty)),
       ...(declaration.members ?? []).filter(isMethod).filter(isPublicMember).map(methodEntry),
       ...(declaration.slots ?? []).map((slot) =>
-        namedEntry({ ...slot, name: slot.name || 'default' }, 'slot', 'slots')
+        namedEntry({ ...slot, name: slot.name || 'default' }, 'slot', ARG_TYPE_CATEGORIES.slots)
       ),
-      ...(declaration.cssParts ?? []).map((part) => namedEntry(part, 'part', 'css shadow parts')),
-      ...(declaration.cssStates ?? []).map((state) => namedEntry(state, 'state', 'css states')),
+      ...(declaration.cssParts ?? []).map((part) =>
+        namedEntry(part, 'part', ARG_TYPE_CATEGORIES.cssParts)
+      ),
+      ...(declaration.cssStates ?? []).map((state) =>
+        namedEntry(state, 'state', ARG_TYPE_CATEGORIES.cssStates)
+      ),
       ...(declaration.cssProperties ?? []).map(cssPropertyEntry),
     ]),
     ...mapAttributesAndProperties(declaration, typeProperty),
@@ -68,7 +73,7 @@ function mapAttributesAndProperties(
     if (attribute) {
       argTypes[attribute.name] = toArgType(
         attribute.name,
-        'attributes',
+        ARG_TYPE_CATEGORIES.attributes,
         field,
         field.deprecated ?? attribute.deprecated,
         typeProperty
@@ -77,7 +82,7 @@ function mapAttributesAndProperties(
     if (attribute?.name !== field.name) {
       argTypes[field.name] = toArgType(
         field.name,
-        'properties',
+        ARG_TYPE_CATEGORIES.properties,
         field,
         field.deprecated ?? attribute?.deprecated,
         typeProperty
@@ -90,7 +95,7 @@ function mapAttributesAndProperties(
     if (!attribute.fieldName || !fields.some((field) => field.name === attribute.fieldName)) {
       argTypes[attribute.name] = toArgType(
         attribute.name,
-        'attributes',
+        ARG_TYPE_CATEGORIES.attributes,
         attribute,
         attribute.deprecated,
         typeProperty
@@ -103,7 +108,7 @@ function mapAttributesAndProperties(
 
 function toArgType(
   key: string,
-  category: 'attributes' | 'properties',
+  category: typeof ARG_TYPE_CATEGORIES.attributes | typeof ARG_TYPE_CATEGORIES.properties,
   source: ManifestAttribute | ManifestClassField,
   deprecated: ManifestAttribute['deprecated'],
   typeProperty: string
@@ -111,7 +116,7 @@ function toArgType(
   const text = readTypeText(source, typeProperty);
   const parsed =
     parseTypeText(text) ??
-    (category === 'attributes'
+    (category === ARG_TYPE_CATEGORIES.attributes
       ? { type: { name: 'string' } as const }
       : { type: { name: 'other', value: text ?? '' } as const, control: false as const });
   const readonly = 'readonly' in source && source.readonly === true;
@@ -136,7 +141,7 @@ function eventEntries(
   return [
     [
       `${event.name}-event`,
-      memberArgType(event, 'events', {
+      memberArgType(event, ARG_TYPE_CATEGORIES.events, {
         type: { name: 'other', value: text },
         control: false,
         table: { type: { summary: text } },
@@ -156,14 +161,18 @@ function eventEntries(
 function methodEntry(method: ManifestClassMethod): [string, StrictInputType] {
   return [
     `${method.name}-method`,
-    memberArgType(method, 'methods', {
+    memberArgType(method, ARG_TYPE_CATEGORIES.methods, {
       type: { name: 'function' },
       table: { type: { summary: methodSignature(method) } },
     }),
   ];
 }
 
-function namedEntry(item: MemberItem, suffix: string, category: string): [string, StrictInputType] {
+function namedEntry(
+  item: MemberItem,
+  suffix: string,
+  category: ArgTypeCategory
+): [string, StrictInputType] {
   return [`${item.name}-${suffix}`, memberArgType(item, category, { type: { name: 'string' } })];
 }
 
@@ -172,7 +181,7 @@ function cssPropertyEntry(property: CssCustomPropertyWithType): [string, StrictI
 
   return [
     property.name,
-    memberArgType(property, 'css custom properties', {
+    memberArgType(property, ARG_TYPE_CATEGORIES.cssProperties, {
       ...cssCustomPropertyControl(syntax),
       table: {
         type: { summary: syntax },
@@ -184,7 +193,7 @@ function cssPropertyEntry(property: CssCustomPropertyWithType): [string, StrictI
 
 function memberArgType(
   item: MemberItem,
-  category: string,
+  category: ArgTypeCategory,
   rest: MemberArgTypeRest
 ): StrictInputType {
   const { table, ...input } = rest;
