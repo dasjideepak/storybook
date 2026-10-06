@@ -50,6 +50,18 @@ export const getReactSymbolName = (elementType: any): string => {
   return reactComponentName;
 };
 
+/** Name of the component wrapped by `React.memo`, also through `React.memo(React.forwardRef(...))` */
+const getMemoInnerName = (memoType: any): string | undefined => {
+  const inner = memoType.type;
+  return (
+    inner?.displayName ||
+    inner?.name ||
+    inner?.render?.displayName ||
+    inner?.render?.name ||
+    undefined
+  );
+};
+
 // Recursively remove "_owner" property from elements to avoid crash on docs page when passing components as an array prop (#17482)
 // Note: It may be better to use this function only in development environment.
 function simplifyNodeForStringify(node: ReactNode): ReactNode {
@@ -142,6 +154,8 @@ export const renderJsx = (code: React.ReactElement, options?: JSXOptions) => {
           return getDocgenSection(el.type, 'displayName');
         } else if (el.type.render?.displayName) {
           return el.type.render.displayName;
+        } else if (isMemo(el.type) && getMemoInnerName(el.type)) {
+          return getMemoInnerName(el.type) ?? getReactSymbolName(el.type);
         } else if (
           typeof el.type === 'symbol' ||
           (el.type.$$typeof && typeof el.type.$$typeof === 'symbol')
